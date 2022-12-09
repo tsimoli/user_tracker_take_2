@@ -9,7 +9,9 @@ defmodule UserTrackerWeb.UserTracker do
     socket =
       if connected?(socket) do
         uuid = Ecto.UUID.generate()
+
         view = page_module(socket.view, socket.assigns.live_action)
+
         UserEngagementTracker.start_link([uuid, unique_id, view])
         socket |> assign(engagement_id: uuid)
       else
@@ -23,7 +25,7 @@ defmodule UserTrackerWeb.UserTracker do
     case {view, live_action} do
       {PageCLive, :tab1} -> UserTrackerWeb.Tab1Component
       {PageCLive, :tab2} -> UserTrackerWeb.Tab2Component
-      _ -> live_action
+      _ -> view
     end
   end
 end
