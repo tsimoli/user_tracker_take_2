@@ -7,30 +7,26 @@ defmodule UserTracker.UserEngagementTracker do
 
   # Client
 
-  def start_link([uuid, _, _] = initial_state) do
+  def start_link(initial_state) do
     GenServer.start_link(
       __MODULE__,
-      initial_state,
-      name: process_name(uuid)
+      initial_state
     )
   end
 
-  defp process_name(uuid),
-    do: {:via, Registry, {UserEngagementTrackerRegistry, "engagement_tracker_#{uuid}"}}
-
-  def change_content_visibility(uuid, content_visible) do
-    GenServer.cast(process_name(uuid), {:content_visible, content_visible})
+  def change_content_visibility(pid, content_visible) do
+    GenServer.cast(pid, {:content_visible, content_visible})
   end
 
   # Server
 
   @impl true
-  def init([uuid, unique_id, view]) do
-    {:ok, %{uuid: uuid, unique_id: unique_id, view: view}, {:continue, :create_page_view}}
+  def init([unique_id, view]) do
+    {:ok, %{unique_id: unique_id, view: view}, {:continue, :create_page_view}}
   end
 
   @impl true
-  def handle_continue(:create_page_view, %{uuid: uuid, unique_id: unique_id, view: view}) do
+  def handle_continue(:create_page_view, %{unique_id: unique_id, view: view}) do
     tracking_session = Tracking.get_tracking_session_by_unique_id(unique_id)
 
     pageview =
@@ -41,7 +37,6 @@ defmodule UserTracker.UserEngagementTracker do
       })
 
     tracking_data = %{
-      uuid: uuid,
       pageview_id: pageview.id,
       engagement_time: 1,
       content_visible: false
