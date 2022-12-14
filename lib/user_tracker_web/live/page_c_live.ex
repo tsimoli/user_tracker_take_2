@@ -62,13 +62,4 @@ defmodule UserTrackerWeb.PageCLive do
       :tab2 -> "Tab 2"
     end
   end
-
-  def handle_event(
-        "content_visible",
-        %{"content_visible" => content_visible},
-        %{assigns: %{engagement_id: engagement_id}} = socket
-      ) do
-    UserTracker.UserEngagementTracker.change_content_visibility(engagement_id, content_visible)
-    {:noreply, socket}
-  end
 end

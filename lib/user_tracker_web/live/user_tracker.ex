@@ -4,16 +4,33 @@ defmodule UserTrackerWeb.UserTracker do
 
   alias UserTrackerWeb.PageCLive
   alias UserTracker.UserEngagementTracker
+  alias UserTracker.UserEngagementTrackerManager
 
   def on_mount(:default, _params, %{"unique_id" => unique_id}, socket) do
     socket =
       if connected?(socket) do
-        uuid = Ecto.UUID.generate()
-
         view = page_module(socket.view, socket.assigns.live_action)
 
-        UserEngagementTracker.start_link([uuid, unique_id, view])
-        socket |> assign(engagement_id: uuid)
+        case UserEngagementTrackerManager.start_link([unique_id, view]) do
+          {:ok, pid} ->
+            socket |> assign(engagement_pid: pid)
+
+            attach_hook(socket, :user_engagement_events, :handle_event, fn
+              "content_visible", %{"content_visible" => content_visible}, socket ->
+                UserTracker.UserEngagementTrackerManager.change_content_visibility(
+                  pid,
+                  content_visible
+                )
+
+                {:halt, socket}
+
+              _event, _params, socket ->
+                {:cont, socket}
+            end)
+
+          _ ->
+            socket
+        end
       else
         socket
       end
